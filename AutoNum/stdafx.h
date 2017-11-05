@@ -20,3 +20,5 @@ using namespace std;
 using namespace cv;
 
 Mat NormalizeAutonum(Mat&);
+
+Mat ContourAnalysis(vector<vector<Point>>&, vector<Vec2f>&, int, int);

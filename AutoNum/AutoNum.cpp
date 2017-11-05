@@ -16,7 +16,7 @@ static Mat OpenImage()
 	else
 		throw "No path entered";*/
 
-	image = imread("7.bmp", IMREAD_UNCHANGED);
+	image = imread("20.bmp", IMREAD_UNCHANGED);
 
 	return image;
 }

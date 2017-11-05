@@ -1,6 +1,6 @@
 #include "stdafx.h"
 
-static Mat HoughFiltering(Mat& gray)
+static Mat AffineLinesFiltering(Mat& gray)
 {
 	Mat filtered = gray.clone();
 
@@ -9,7 +9,6 @@ static Mat HoughFiltering(Mat& gray)
 	medianBlur(filtered, filtered, 3);
 	medianBlur(filtered, filtered, 5);
 	equalizeHist(filtered, filtered);
-//	Laplacian(filtered, filtered, filtered.depth(), 7);
 	medianBlur(filtered, filtered, 5);
 	medianBlur(filtered, filtered, 5);
 	medianBlur(filtered, filtered, 3);
@@ -18,10 +17,9 @@ static Mat HoughFiltering(Mat& gray)
 	return filtered;
 }
 
-static Mat HoughEdging(Mat& filtered)
+static Mat AffineLinesCountours(Mat& filtered, vector<vector<Point>>& contours)
 {
 	Mat edged, canny;
-	vector<vector<Point> > contours;
 	vector<Vec4i> hierarchy;
 	int i;
 
@@ -32,27 +30,38 @@ static Mat HoughEdging(Mat& filtered)
 	edged = Mat::zeros(canny.size(), canny.type());
 	for (i = 0; i < contours.size(); i++)
 	{
-		if (contours[i].size() > 300 )
-			drawContours(edged, contours, i, CV_RGB(255,255,255), 1, 8, hierarchy, 0, Point());
+		if (contours[i].size() > 300)
+		{
+			drawContours(edged, contours, i, CV_RGB(255, 255, 255), 1, 8, hierarchy, 0, Point());
+		}
+		else
+		{
+			contours.erase(contours.begin() + i);
+			i--;
+		}
+
 	}
-
-
 	return edged;
 }
 
-static void HoughTransform(Mat& original, vector<Point2f>& linePoints)
+static void GetAffineLines(Mat& original, vector<Point2f>& linePoints)
 {
 	size_t i;
 	Mat gray, filtered, edged;
+	vector<vector<Point>> contours;
 	Point pt1, pt2;
 	vector<Vec2f> lines;
 	float rho, theta, x0, y0;
 
 	cvtColor(original, gray, COLOR_BGR2GRAY);
 	
-	filtered = HoughFiltering(gray);
+	filtered = AffineLinesFiltering(gray);
 
-	edged = HoughEdging(filtered);
+	edged = AffineLinesCountours(filtered, contours);
+
+
+	Mat histo;
+	histo = ContourAnalysis(contours, lines, filtered.cols, filtered.rows);
 	
 
 /*	HoughLines(edged, lines, 100, CV_PI / 180, 50, 0, 0, CV_PI / 4,  3*CV_PI / 4);
@@ -83,7 +92,7 @@ static void HoughTransform(Mat& original, vector<Point2f>& linePoints)
 	}*/
 
 	namedWindow("Gray", WINDOW_AUTOSIZE);
-	imshow("Gray", filtered);
+	imshow("Gray", histo);
 
 	namedWindow("Edge", WINDOW_AUTOSIZE);
 	imshow("Edge", edged);
@@ -107,7 +116,7 @@ Mat NormalizeAutonum( Mat& original )
 	vector<Point2f> linePoints;
 	
 
-	HoughTransform( original, linePoints );
+	GetAffineLines( original, linePoints );
 
 
 
