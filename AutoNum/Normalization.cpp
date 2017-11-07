@@ -50,7 +50,7 @@ static void GetAffineLines(Mat& original, vector<Point2f>& linePoints)
 	Mat gray, filtered, edged;
 	vector<vector<Point>> contours;
 	Point pt1, pt2;
-	vector<Vec2f> lines;
+	vector<Vec2f> line_coefs(2); //coefficients for lines 0 - top line, 1 - bottom line
 	float rho, theta, x0, y0;
 
 	cvtColor(original, gray, COLOR_BGR2GRAY);
@@ -61,7 +61,7 @@ static void GetAffineLines(Mat& original, vector<Point2f>& linePoints)
 
 
 	Mat histo;
-	histo = ContourAnalysis(contours, lines, filtered.cols, filtered.rows);
+	histo = ContourAnalysis(contours, line_coefs, filtered.cols, filtered.rows);
 	
 
 /*	HoughLines(edged, lines, 100, CV_PI / 180, 50, 0, 0, CV_PI / 4,  3*CV_PI / 4);
