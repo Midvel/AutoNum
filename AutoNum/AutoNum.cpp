@@ -32,11 +32,11 @@ int main()
 
 	//calcHist
 
-//	namedWindow("Result", WINDOW_AUTOSIZE);
+	//namedWindow("Result", WINDOW_AUTOSIZE);
 	//imshow("Result", normalized);
 
-//	waitKey(1000);
-//	getchar();
+	waitKey();
+	getchar();
 	return 0;
 }
 

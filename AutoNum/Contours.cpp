@@ -155,7 +155,7 @@ static int GetPlato(vector<InsideDistance>& distances, vector<int>& platoes)
 		}
 
 	}
-	return platoes.size();
+	return platoes.size() / 2;
 }
 
 static int GetLongestPlato(vector<int>& platoes)
@@ -214,32 +214,14 @@ static void MakeLines(vector<vector<Point>>& contours, vector<InsideDistance>& d
 	ApproxLine(bottomLine, coefs[1]);
 }
 
-//Main function in contour analisys module.
-//contours - contours of cropped area with number
-//line_coefs - returned value with coefficients of boundary lines of number
-Mat ContourAnalysis(vector<vector<Point>>& contours, vector<Vec2f>& line_coefs, int width, int height)
+static Mat DrawHistogramm(vector<InsideDistance>& distances, vector<int>& platoes, int width, int height)
 {
-	int** contourMatrix = nullptr;
-	vector<InsideDistance> distances;
-	vector<int> platoes;
-	int nPlato = 0;
-
-	CreateContourMatrix(contourMatrix, width, height);
-	FillContourMatrix(contourMatrix, contours);
-
-	GetDistances(contourMatrix, distances, width, height);
-
-	nPlato = GetPlato(distances, platoes);
-
-	if (nPlato > 0)
-	{
-		MakeLines(contours, distances, platoes, line_coefs);
-	}
-
-	int j = 0;
+	int i, j = 0;
 	Mat histo = Mat::zeros(Size(width, height), CV_8U);
 	Scalar color = Scalar(155, 155, 155);
-	for (int i = 0; i < width; i++)
+	int nPlato = platoes.size() / 2;
+
+	for (i = 0; i < width; i++)
 	{
 		if (nPlato > 0 && j < nPlato && i == platoes[j])
 			color = Scalar(255, 255, 255);
@@ -249,6 +231,33 @@ Mat ContourAnalysis(vector<vector<Point>>& contours, vector<Vec2f>& line_coefs, 
 			j += 2;
 		}
 		line(histo, Point(i, height - 1), Point(i, height - distances[i].distance), color, 1, CV_AA);
+	}
+	return histo;
+}
+
+//Main function in contour analisys module.
+//contours - contours of cropped area with number
+//line_coefs - returned value with coefficients of boundary lines of number
+Mat ContourAnalysis(vector<vector<Point>>& contours, vector<Vec2f>& line_coefs, int width, int height)
+{
+	int** contourMatrix = nullptr;
+	vector<InsideDistance> distances;
+	vector<int> platoes;
+	int nPlato = 0;
+	Mat histo;
+
+	CreateContourMatrix(contourMatrix, width, height);
+	FillContourMatrix(contourMatrix, contours);
+
+	GetDistances(contourMatrix, distances, width, height);
+
+	nPlato = GetPlato(distances, platoes);
+
+	histo = DrawHistogramm(distances, platoes, width, height);
+
+	if (nPlato > 0)
+	{
+		MakeLines(contours, distances, platoes, line_coefs);
 	}
 
 	DeleteContourMatrix(contourMatrix, height);

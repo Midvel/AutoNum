@@ -1,6 +1,7 @@
 #include "stdafx.h"
 
-static Mat AffineLinesFiltering(Mat& gray)
+//Pack of functions to get supporting lines for auto number.
+static Mat SupportingLinesFiltering(Mat& gray)
 {
 	Mat filtered = gray.clone();
 
@@ -17,7 +18,7 @@ static Mat AffineLinesFiltering(Mat& gray)
 	return filtered;
 }
 
-static Mat AffineLinesCountours(Mat& filtered, vector<vector<Point>>& contours)
+static Mat SupportingLinesCountours(Mat& filtered, vector<vector<Point>>& contours)
 {
 	Mat edged, canny;
 	vector<Vec4i> hierarchy;
@@ -44,55 +45,22 @@ static Mat AffineLinesCountours(Mat& filtered, vector<vector<Point>>& contours)
 	return edged;
 }
 
-static void GetAffineLines(Mat& original, vector<Point2f>& linePoints)
+static void GetSupportingLines(Mat& original, vector<Vec2f>& line_coefs)
 {
-	size_t i;
-	Mat gray, filtered, edged;
+	Mat gray, filtered, edged, histo;
 	vector<vector<Point>> contours;
-	Point pt1, pt2;
-	vector<Vec2f> line_coefs(2); //coefficients for lines 0 - top line, 1 - bottom line
-	float rho, theta, x0, y0;
+	
 
 	cvtColor(original, gray, COLOR_BGR2GRAY);
 	
-	filtered = AffineLinesFiltering(gray);
+	filtered = SupportingLinesFiltering(gray);
 
-	edged = AffineLinesCountours(filtered, contours);
+	edged = SupportingLinesCountours(filtered, contours);
 
-
-	Mat histo;
 	histo = ContourAnalysis(contours, line_coefs, filtered.cols, filtered.rows);
 	
-
-/*	HoughLines(edged, lines, 100, CV_PI / 180, 50, 0, 0, CV_PI / 4,  3*CV_PI / 4);
-
-	Mat color;
-	cvtColor(edged, color, COLOR_GRAY2BGR);
-	for (i = 0; i < lines.size(); i++)
-	{
-		rho = lines[i][0];
-		theta = lines[i][1];
-		double a = cos(theta), b = sin(theta);
-
-		x0 = rho * cos(theta);
-		y0 = rho * sin(theta);
-
-		linePoints.push_back(Point2f(x0, y0));
-		linePoints.push_back(Point2f(x0 + gray.cols * sin(theta), y0 - gray.rows * cos(theta)));
-		
-		pt1.x = cvRound(x0);
-		pt1.y = cvRound(y0);
-		cout << "Point1 " << pt1.x << " " << pt1.y << "\n";
-		
-		pt2.x = cvRound(x0 + gray.cols * sin(theta));
-		pt2.y = cvRound(y0 - gray.rows * cos(theta));
-		cout << "Point2 " << pt2.x << " " << pt2.y << "\n";
-		
-		line(original, pt1, pt2, Scalar(0, 0, 255), 1, CV_AA);
-	}*/
-
-	namedWindow("Gray", WINDOW_AUTOSIZE);
-	imshow("Gray", histo);
+/*	namedWindow("Original", WINDOW_AUTOSIZE);
+	imshow("Original", histo);
 
 	namedWindow("Edge", WINDOW_AUTOSIZE);
 	imshow("Edge", edged);
@@ -101,55 +69,153 @@ static void GetAffineLines(Mat& original, vector<Point2f>& linePoints)
 	imshow("Lines", original);
 
 	waitKey();
-	getchar();
+	getchar();*/
 
 	return;
 }
+//Pack of functions to provide affine tranformation on auto number if it is turned.
+static void GetAffineInput(vector<Point2f>& input, vector<Vec2f>& line_coefs, int width)
+{
+	float a_top = line_coefs[0][0], b_top = line_coefs[0][1];
+	float a_bottom = line_coefs[1][0], b_bottom = line_coefs[1][1];
+	float a_perp, b_perp;
+
+	Point2f P_left, P_right, P_bottom;
+
+	P_left.x = width / 4.0;
+	P_left.y = a_top * P_left.x + b_top;
+
+	P_right.x = 3.0 * width / 4.0;
+	P_right.y = a_top * P_right.x + b_top;
+
+	//get line perpendicular to the top line throuh the central point
+	a_perp = -1.0 / a_top;
+	b_perp = (a_top * width * 0.5 + b_top) + width * 0.5 / a_top;
+
+	//get point of intersection of perpendicular and the bottom line
+	P_bottom.x = (b_perp - b_bottom) / (a_bottom - a_perp);
+	P_bottom.y = a_bottom * P_bottom.x + b_bottom;
+
+	input.push_back(P_left);
+	input.push_back(P_right);
+	input.push_back(P_bottom);
+}
+
+static void GetAffineOutput(vector<Point2f>& output, vector<Point2f>& input, float coef)
+{
+	Point2f P_left, P_right, P_bottom;
+	float angle = (-1.0) * atanf(coef);
+
+	P_left = input[0];
+	
+	P_right.y = P_left.y;
+	P_right.x = (input[1].x - P_left.x)*cos(angle) - (input[1].y - P_left.y)*sin(angle) + P_left.x;
+
+	P_bottom.x = (input[2].x - P_left.x)*cos(angle) - (input[2].y - P_left.y)*sin(angle) + P_left.x;
+	P_bottom.y = (input[2].x - P_left.x)*sin(angle) + (input[2].y - P_left.y)*cos(angle) + P_left.y;
+
+	output.push_back(P_left);
+	output.push_back(P_right);
+	output.push_back(P_bottom);
+}
 
 
+static Mat MakeAffine(Mat& original, vector<Vec2f>& line_coefs)
+{
+	vector<Point2f> input, output;
+	Mat transform, affine, cropped;
 
+	affine = original.clone();
+
+	if ((int)round(line_coefs[0][0] * 1000) != 0)
+	{
+		GetAffineInput(input, line_coefs, original.cols);
+		GetAffineOutput(output, input, line_coefs[0][0]);
+
+		transform = getAffineTransform(input, output);
+
+		warpAffine(original, affine, transform, original.size(), INTER_LINEAR, BORDER_REFLECT_101);
+
+		cropped = affine.rowRange(output[0].y, output[2].y);
+	}
+	else
+	{
+		cropped = affine.rowRange(line_coefs[0][1], line_coefs[1][1]);
+	}
+
+	return cropped;
+}
+
+
+//Main function in normalization module. Provides all operation on image with auto number area to get 
+//image prepared to neuronet processing.
 Mat NormalizeAutonum( Mat& original )
 {
-	Mat gray;
-	Mat edge, edge_color, aphin;
+	Mat affine, contrast, gray, cropped, bin;
 	Mat normalized;
-	vector<Point2f> linePoints;
+	vector<Vec2f> line_coefs(2); //coefficients for supporting lines 0 - top line, 1 - bottom line
+
+	GetSupportingLines(original, line_coefs);
 	
-
-	GetAffineLines( original, linePoints );
-
+	affine = MakeAffine(original, line_coefs);
 
 
-/*	cvtColor(edge, edge_color, COLOR_GRAY2BGR);
-	aphin = edge_color.clone();
+	cropped = affine.rowRange(2, affine.rows - 2);
 
-
-
-	vector<Point2f> input;
-	vector<Point2f> output;
-
-	input.push_back(Point2f(linesPoints[0]));
-	input.push_back(Point2f(linesPoints[1]));
-	input.push_back(Point2f(linesPoints[2]));
-	output.push_back(Point2f(linesPoints[0]));
-	output.push_back(Point2f(linesPoints[1].x, linesPoints[0].y));
-	output.push_back(Point2f(linesPoints[2]));
-
-	Mat warpMat = getAffineTransform(input, output);
-
-	warpAffine(gray, aphin, warpMat, edge.size(), INTER_LINEAR, BORDER_REFLECT_101);
-
-	Mat cropped(aphin, Rect(0, linesPoints[0].y + 10, aphin.cols, linesPoints[2].y - linesPoints[0].y - 10));
-
-	Mat contrast;
-	medianBlur(cropped, contrast, 3);
+	cvtColor(cropped, gray, COLOR_BGR2GRAY);
+	
+	medianBlur(gray, contrast, 3);
 	equalizeHist(contrast, contrast);
+	medianBlur(contrast, contrast, 3);
 
-	Mat bin;
+	threshold(contrast, bin, 100, 255, THRESH_BINARY_INV);
 
-	threshold(contrast, bin, 100, 255, THRESH_BINARY_INV);*/
 
-	Mat bin;
+
+	int i, j = 0;
+	Mat histo = Mat::zeros(bin.size(), CV_8U);
+	Scalar color = Scalar(255, 255, 255);
+
+	int* mas = new int[bin.cols];
+	for (i = 0; i < bin.cols; i++)
+		mas[i] = 0;
+
+	cv::Mat_<uchar> bin2 = bin;
+
+	for (i = 0; i < bin.rows; i++)
+		for (j = 0; j < bin.cols; j++)
+		{
+			if (bin2(i, j) > 0)
+				mas[j]++;
+		}
+
+	for (i = 0; i < bin.cols; i++)
+	{
+		circle(histo, Point(i, mas[i] - 1), 2, Scalar(255, 255, 255), FILLED, LINE_8);
+	}
+
+	/// Display
+	namedWindow("calcHist Demo", WINDOW_AUTOSIZE);
+	imshow("calcHist Demo", histo);
+
+
+
+
+
+//	namedWindow("Original", WINDOW_AUTOSIZE);
+//	imshow("Original", cropped);
+
+//	namedWindow("Edge", WINDOW_AUTOSIZE);
+//	imshow("Edge", contrast);
+
+	namedWindow("Lines", WINDOW_AUTOSIZE);
+	imshow("Lines", bin);
+
+
+
+	waitKey();
+	getchar();
+
 
 	return bin;
 }
