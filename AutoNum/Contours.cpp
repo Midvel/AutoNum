@@ -14,11 +14,19 @@ const int PLATO_DELTA_Y = 2;
 const int PLATO_DELTA_LOCAL = 4;
 const int PLATO_LOCAL_LENGTH = 5;
 
+const int CONTOUR_DELTA_LOCAL = 4;
+
 enum directions {
 	DIST_TOP = 1,
 	DIST_BOTTOM,
 	DIST_LEFT,
 	DIST_RIGHT
+};
+
+enum signs {
+	SIGN_NEG = -1,
+	SIGN_ZERO = 0,
+	SIGN_POS = 1
 };
 
 //Contour matrix is a combination of image (points coordinates) and contours (contour number).
@@ -98,7 +106,7 @@ static InsideDistance SetDistance(int** contourMatrix, int col, int height)
 
 static void GetDistances(int** contourMatrix, vector<InsideDistance>& dist, int width, int height)
 {
-	int i, j;
+	int j;
 	InsideDistance cur_distance;
 
 	for (j = 0; j < width; j++)
@@ -176,6 +184,112 @@ static int GetLongestPlato(vector<int>& platoes)
 }
 
 //Set of functions to build lines based on points which belong to contours which bounder the longest plato.
+/*static bool CheckFalseDirection(int direction, int x, int xStart)
+{
+	if (direction == DIST_LEFT)
+		return x < xStart;
+	else if (direction == DIST_RIGHT)
+		return x > xStart;
+	else
+		throw "CheckFalseDirection(): wrong direction.";
+}
+
+static bool CheckTrueDirection(int direction, int x, int xStart)
+{
+	if (direction == DIST_LEFT)
+		return x > xStart;
+	else if (direction == DIST_RIGHT)
+		return x < xStart;
+	else
+		throw "CheckTrueDirection(): wrong direction.";
+}
+
+static bool CheckSign(vector<Point>& contour, int startNum, int sign, int direction)
+{
+	bool bChecked = false;
+	int i = startNum + sign;
+
+	while (i != startNum)
+	{
+		if (i == contour.size() && sign == SIGN_POS)
+			i = 0;
+		else if (i == -1 && sign == SIGN_NEG)
+			i = contour.size() - 1;
+
+		if (CheckFalseDirection(direction, contour[i].x,contour[startNum].x))
+			break;
+		else if (CheckTrueDirection(direction, contour[i].x, contour[startNum].x))
+		{
+			bChecked = true;
+			break;
+		}
+		i += sign;
+	}
+	return bChecked;
+}
+
+static int GetContourCicleSign(vector<Point>& contour, int startNum, int direction)
+{
+	int i;
+	bool bSign = false;
+	int sign;
+
+	sign = SIGN_POS;
+	bSign = CheckSign(contour, startNum, sign, direction);
+
+	if (!bSign)
+	{
+		sign = SIGN_NEG;
+		bSign = CheckSign(contour, startNum, sign, direction);
+	}
+
+	if (!bSign)
+		sign = SIGN_ZERO;
+
+	return sign;
+}*/
+
+/*static bool CheckLineEdge(vector<Point>& contour, int sign, int cur)
+{
+	int i;
+	bool bOk = true;
+
+
+	if (abs(contour[i].x - contour[cur].x) <= 1 && abs(contour[i].y - contour[cur].y) <= CONTOUR_DELTA_LOCAL )
+
+	for (i = PLATO_LOCAL_LENGTH; i > 0; i--)
+		if (abs(distances[cur - i].distance - distances[cur - i + 1].distance) > PLATO_DELTA_Y)
+		{
+			bOk = false;
+			break;
+		}
+
+	return  bOk && abs(distances[cur].distance - distances[cur - PLATO_LOCAL_LENGTH].distance) <= PLATO_DELTA_LOCAL &&
+		distances[cur].bottom != -1 && distances[cur].top != -1;
+}*/
+
+/*static void GetLineEdgePoints(vector<Point>& line, vector<Point>& contour, int xStart, int yStart, int direction)
+{
+	int i, startNum = 0;
+	Point pStart, pTmp;
+	bool bFound = false;
+	int sign;
+
+	while (startNum < contour.size() && contour[startNum].x != xStart && contour[startNum].y != yStart)
+	{
+		startNum++;
+	}
+	if (startNum < contour.size())
+		pStart = contour[startNum];
+	else
+		throw "GetLineEdgePoints(): no point in the contour.";
+
+	sign = GetContourCicleSign(contour, startNum, direction);
+
+	//for (i = 0; i < )
+
+}*/
+
 static void ApproxLine(vector<Point>& line_points, Vec2f& coefs)
 {
 	double a, b;
@@ -200,15 +314,22 @@ static void ApproxLine(vector<Point>& line_points, Vec2f& coefs)
 
 static void MakeLines(vector<vector<Point>>& contours, vector<InsideDistance>& distances, vector<int>& platoes, vector<Vec2f>& coefs)
 {
-	int i;
+	int col;
 	int longest_plato = GetLongestPlato(platoes);
-
+	int leftTopContourNum = distances[2 * longest_plato].top;
+	int rightTopContourNum = distances[2 * longest_plato + 1].top;
+	int leftBottomContourNum = distances[2 * longest_plato].bottom;
+	int rightBottomContourNum = distances[2 * longest_plato + 1].bottom;
+	int platoStart = platoes[2 * longest_plato];
+	int platoEnd = platoes[2 * longest_plato + 1];
 	vector<Point> topLine, bottomLine;
 
-	for (i = platoes[2 * longest_plato]; i <= platoes[2 * longest_plato + 1]; i++)
+	//GetLineEdgePoints(topLine, contours[leftTopContourNum], platoStart, distances[platoStart].row_top, DIST_LEFT);
+
+	for (col = platoStart; col <= platoEnd; col++)
 	{
-		topLine.push_back(Point(i, distances[i].row_top));
-		bottomLine.push_back(Point(i, distances[i].row_bottom));
+		topLine.push_back(Point(col, distances[col].row_top));
+		bottomLine.push_back(Point(col, distances[col].row_bottom));
 	}
 	ApproxLine(topLine, coefs[0]);
 	ApproxLine(bottomLine, coefs[1]);

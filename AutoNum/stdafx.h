@@ -20,6 +20,27 @@
 using namespace std;
 using namespace cv;
 
-Mat NormalizeAutonum(Mat&);
+enum imgnums
+{
+	IMG_ORIGINAL = 0,
+	IMG_NORM_LINES_FILTERED,
+	IMG_NORM_LINES_EDGED,
+	IMG_NORM_LINES_PLATOES,
+	IMG_NORM_LINES,
+	IMG_NORM_AFFINE,
+	IMG_NORMALIZED,
+	IMG_NORM_BIN,
+	IMG_NORM_BIN_HISTO,
+	IMG_NORM_CUTLINES,
+	IMG_TOTAL
+};
+
+void SetImage(cv::Mat&, int);
+cv::Mat& GetImage(int);
 
 Mat ContourAnalysis(vector<vector<Point>>&, vector<Vec2f>&, int, int);
+
+Mat NormalizeAutonum(cv::Mat&);
+
+void Decomposition(Mat&, vector<Mat>&);
+

@@ -45,32 +45,40 @@ static Mat SupportingLinesCountours(Mat& filtered, vector<vector<Point>>& contou
 	return edged;
 }
 
+static Mat DrawSupportingLines(Mat& original, vector<Vec2f>& line_coefs)
+{
+	Mat lines = original.clone();
+	float a1 = line_coefs[0][0];
+	float b1 = line_coefs[0][1];
+	float a2 = line_coefs[1][0];
+	float b2 = line_coefs[1][1];
+
+	line(lines, Point(0, b1), Point(lines.cols - 1, a1 * (lines.cols - 1) + b1), Scalar(255, 0, 0), 1, CV_AA);
+	line(lines, Point(0, b2), Point(lines.cols - 1, a2 * (lines.cols - 1) + b2), Scalar(255, 0, 0), 1, CV_AA);
+
+	return lines;
+}
 static void GetSupportingLines(Mat& original, vector<Vec2f>& line_coefs)
 {
-	Mat gray, filtered, edged, histo;
+	Mat gray, filtered, edged, histo, lines;
 	vector<vector<Point>> contours;
 	
 
 	cvtColor(original, gray, COLOR_BGR2GRAY);
 	
 	filtered = SupportingLinesFiltering(gray);
+	SetImage(filtered, IMG_NORM_LINES_FILTERED);
 
 	edged = SupportingLinesCountours(filtered, contours);
+	SetImage(edged, IMG_NORM_LINES_EDGED);
 
 	histo = ContourAnalysis(contours, line_coefs, filtered.cols, filtered.rows);
+	SetImage(histo, IMG_NORM_LINES_PLATOES);
+
+	lines = DrawSupportingLines(original, line_coefs);
+	SetImage(lines, IMG_NORM_LINES);
 	
-/*	namedWindow("Original", WINDOW_AUTOSIZE);
-	imshow("Original", histo);
-
-	namedWindow("Edge", WINDOW_AUTOSIZE);
-	imshow("Edge", edged);
-
-	namedWindow("Lines", WINDOW_AUTOSIZE);
-	imshow("Lines", original);
-
-	waitKey();
-	getchar();*/
-
+	
 	return;
 }
 //Pack of functions to provide affine tranformation on auto number if it is turned.
@@ -146,12 +154,11 @@ static Mat MakeAffine(Mat& original, vector<Vec2f>& line_coefs)
 	return cropped;
 }
 
-
 //Main function in normalization module. Provides all operation on image with auto number area to get 
 //image prepared to neuronet processing.
 Mat NormalizeAutonum( Mat& original )
 {
-	Mat affine, contrast, gray, cropped, bin;
+	Mat affine, contrast, gray, cropped, bin, histo;
 	Mat normalized;
 	vector<Vec2f> line_coefs(2); //coefficients for supporting lines 0 - top line, 1 - bottom line
 
@@ -159,63 +166,15 @@ Mat NormalizeAutonum( Mat& original )
 	
 	affine = MakeAffine(original, line_coefs);
 
-
 	cropped = affine.rowRange(2, affine.rows - 2);
+	SetImage(cropped, IMG_NORM_AFFINE);
 
-	cvtColor(cropped, gray, COLOR_BGR2GRAY);
+	cvtColor(cropped, gray, COLOR_RGB2GRAY);
 	
 	medianBlur(gray, contrast, 3);
-	equalizeHist(contrast, contrast);
-	medianBlur(contrast, contrast, 3);
+	equalizeHist(contrast, normalized);
+	medianBlur(normalized, normalized, 3);
+	SetImage(normalized, IMG_NORMALIZED);
 
-	threshold(contrast, bin, 100, 255, THRESH_BINARY_INV);
-
-
-
-	int i, j = 0;
-	Mat histo = Mat::zeros(bin.size(), CV_8U);
-	Scalar color = Scalar(255, 255, 255);
-
-	int* mas = new int[bin.cols];
-	for (i = 0; i < bin.cols; i++)
-		mas[i] = 0;
-
-	cv::Mat_<uchar> bin2 = bin;
-
-	for (i = 0; i < bin.rows; i++)
-		for (j = 0; j < bin.cols; j++)
-		{
-			if (bin2(i, j) > 0)
-				mas[j]++;
-		}
-
-	for (i = 0; i < bin.cols; i++)
-	{
-		circle(histo, Point(i, mas[i] - 1), 2, Scalar(255, 255, 255), FILLED, LINE_8);
-	}
-
-	/// Display
-	namedWindow("calcHist Demo", WINDOW_AUTOSIZE);
-	imshow("calcHist Demo", histo);
-
-
-
-
-
-//	namedWindow("Original", WINDOW_AUTOSIZE);
-//	imshow("Original", cropped);
-
-//	namedWindow("Edge", WINDOW_AUTOSIZE);
-//	imshow("Edge", contrast);
-
-	namedWindow("Lines", WINDOW_AUTOSIZE);
-	imshow("Lines", bin);
-
-
-
-	waitKey();
-	getchar();
-
-
-	return bin;
+	return normalized;
 }

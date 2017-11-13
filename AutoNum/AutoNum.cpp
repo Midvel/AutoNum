@@ -25,15 +25,27 @@ int main()
 {
 	Mat original;
 	Mat normalized;
+	vector<Mat> components;
 	
 	original = OpenImage();
+	SetImage(original, IMG_ORIGINAL);
+
 
 	normalized = NormalizeAutonum(original);
 
-	//calcHist
+	Decomposition(normalized, components);
 
-	//namedWindow("Result", WINDOW_AUTOSIZE);
-	//imshow("Result", normalized);
+	namedWindow("Bin", WINDOW_AUTOSIZE);
+//	imshow("Bin", GetImage(IMG_NORM_LINES_FILTERED));
+
+//	imshow("Histo", GetImage(IMG_NORM_LINES_EDGED));
+//	imshow("Decomposed", GetImage(IMG_NORM_LINES_PLATOES));
+//	imshow("Lines", GetImage(IMG_NORM_LINES));
+
+	imshow("Bin", GetImage(IMG_NORM_BIN));
+
+	imshow("Histo", GetImage(IMG_NORM_BIN_HISTO));
+	imshow("Decomposed", GetImage(IMG_NORM_CUTLINES));
 
 	waitKey();
 	getchar();
