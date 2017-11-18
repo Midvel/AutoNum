@@ -171,7 +171,7 @@ Mat NormalizeAutonum( Mat& original )
 
 	GetSupportingLines(original, line_coefs);
 	
-/*	affine = MakeAffine(original, line_coefs);
+	affine = MakeAffine(original, line_coefs);
 
 	cropped = affine.rowRange(2, affine.rows - 2);
 	SetImage(cropped, IMG_NORM_AFFINE);
@@ -180,7 +180,7 @@ Mat NormalizeAutonum( Mat& original )
 	
 	medianBlur(gray, contrast, 3);
 	equalizeHist(contrast, normalized);
-	SetImage(normalized, IMG_NORMALIZED);*/
+	SetImage(normalized, IMG_NORMALIZED);
 
 	return normalized;
 }

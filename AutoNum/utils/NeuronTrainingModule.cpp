@@ -51,6 +51,38 @@ static int IMAGES_NUMBER[IMAGES_CLASSES] = {
 	GARBAGE_INPUT
 };
 
+static string CLASS_NAME[IMAGES_CLASSES] = {
+	"0",
+	"1",
+	"2",
+	"3",
+	"4",
+	"5",
+	"6",
+	"7",
+	"8",
+	"9",
+	"A",
+	"B",
+	"C",
+	"E",
+	"H",
+	"K",
+	"M",
+	"P",
+	"T",
+	"X",
+	"Y",
+	"GARBAGE"
+};
+
+string GetClassName(int number)
+{
+	return CLASS_NAME[number];
+}
+
+
+
 static void NeuroReadInputImages(vector<Mat>& inputImages)
 {
 	int i, j;

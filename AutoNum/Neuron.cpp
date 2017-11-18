@@ -119,60 +119,84 @@ static Mat ComponentPreparing(Mat& component)
 	return prepared;
 }
 
-static void Gradation(cv::Mat& grad)
+string ResultToString(Mat result)
 {
-	int row, col;
+	string recognized;
+	int i;
+	int chosenClass;
+	float chosenValue = 0;
+	Mat_<float> pres = result;
 
-	for (row = 0; row < grad.rows; row++)
+	chosenClass = GARBAGE;
+	chosenValue = pres(0, GARBAGE);
+
+	for (i = 0; i < result.cols - 1; i++)
 	{
-		for (col = 0; col < grad.cols; col++)
+		if (pres(0, i) > chosenValue)
 		{
-			grad.at<uchar>(row, col) = saturate_cast<uchar>(2.2*(grad.at<uchar>(row, col)));
+			chosenClass = i;
+			chosenValue = pres(0, i);
 		}
 	}
-	medianBlur(grad, grad, 7);
-}
 
-int Recognition(vector<Mat>& components)
-{
-	int i;
-	Mat pred, resized, mask;	
-	Ptr<ANN_MLP> network;
-
-	network = ANN_MLP::load("config/network.dat");
-	
-	resized = ComponentPreparing(components[0]);
-	//imwrite("00.bmp", resized);
-	
-	//cv::GaussianBlur(resized, mask, cv::Size(0, 0), 3);
-	//cv::addWeighted(mask, 1.5, resized, -0.2, 0, resized);
-	//medianBlur(resized, resized, 3);
-	//medianBlur(resized, resized, 3);
-	//medianBlur(resized, resized, 3);
-	//threshold(resized, resized, 100, 255, THRESH_TOZERO);
-	//Gradation(resized);
-	namedWindow("Bin", WINDOW_AUTOSIZE);
-
-	imshow("One", resized);
-
-	waitKey();
-	getchar();
-	
-//	resize(components[0], resized, Size(52, 40), 0, 0, CV_INTER_AREA);
-
-	resized.convertTo(resized, CV_32FC1, 1.0 / 255.0);
-
-	pred = resized.reshape(0, 1);
-	
-	if (network->isTrained())
+	if (chosenValue < 0.5)
 	{
-		printf("Predict one-vector:\n");
-		Mat result;
-		network->predict(pred, result);
-		Mat_<float> pres = result;
-		for (i = 0; i < result.cols; i++)
-		cout << "Class: " << i << " value: " << pres(0,i) << endl;
+		if (chosenValue < pres(0, GARBAGE))
+			chosenClass = GARBAGE;
 	}
 
-	return 0;
+	if (chosenClass == GARBAGE)
+	{
+		recognized = "*";
+	}
+	else
+	{
+		recognized = GetClassName(chosenClass);
+	}
+
+	return recognized;
+}
+
+string Recognition(vector<Mat>& components)
+{
+	string recognized;
+	string resstr;
+	int i, j;
+	Mat pred, resized, mask;	
+	Ptr<ANN_MLP> network;
+	FILE* fp;
+	network = ANN_MLP::load("config/network.dat");
+	fp = fopen("results.txt", "w");
+	
+	for (i = 0; i < components.size(); i++)
+	{
+		//resized = ComponentPreparing(components[0]);
+		resize(components[i], resized, Size(NEURON_IMAGE_COLS, NEURON_IMAGE_ROWS), 0, 0, CV_INTER_AREA);
+		//Pre-filtering?
+
+		resized.convertTo(resized, CV_32FC1, 1.0 / 255.0);
+
+		pred = resized.reshape(0, 1);
+
+		if (network->isTrained())
+		{
+			Mat result;
+			network->predict(pred, result);
+			Mat_<float> pres = result;
+			fprintf(fp, "Predict for fragment %d:\n", i);
+			for (j = 0; j < result.cols; j++)
+			{
+				fprintf(fp, "Class \<%s\> value: %f\n", GetClassName(j).c_str(), pres(0, j));
+			}
+			resstr = ResultToString(result);
+			recognized += resstr;
+			fprintf(fp, "Chosen class: <%s>", resstr.c_str());
+			fprintf(fp, "\n");
+		}
+	}
+	fprintf(fp, "Result: %s", recognized.c_str());
+	fprintf(fp, "\n");
+	fclose(fp);
+
+	return recognized;
 }

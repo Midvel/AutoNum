@@ -14,6 +14,7 @@
 #include <vector>
 #define _USE_MATH_DEFINES
 #include <cmath>
+#include <fstream>
 
 #include <opencv2\opencv.hpp>
 #include <opencv2\ml\ml.hpp>
@@ -49,4 +50,4 @@ Mat NormalizeAutonum(cv::Mat&);
 
 void Decomposition(Mat&, vector<Mat>&);
 
-int Recognition(vector<Mat>&);
+string Recognition(vector<Mat>&);
