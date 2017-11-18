@@ -36,16 +36,20 @@ int main()
 
 		normalized = NormalizeAutonum(original);
 
-		Decomposition(normalized, components);
+	//	Decomposition(normalized, components);
 
-		/*	namedWindow("Bin", WINDOW_AUTOSIZE);
+			namedWindow("One", WINDOW_AUTOSIZE);
 
-			imshow("One", components[0]);
+			imshow("One", GetImage(IMG_ORIGINAL));
+			imshow("Two", GetImage(IMG_NORM_LINES_FILTERED));
+			imshow("Three", GetImage(IMG_NORM_LINES_EDGED));
+			imshow("Four", GetImage(IMG_NORM_LINES_PLATOES));
+			imshow("Five", GetImage(IMG_NORM_LINES));
 
 			waitKey();
-			getchar();*/
+			getchar();
 
-		Recognition(components);
+		//Recognition(components);
 	}
 	else if (1 == train)
 	{

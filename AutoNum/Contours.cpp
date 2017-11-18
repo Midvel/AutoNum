@@ -2,10 +2,10 @@
 
 struct InsideDistance
 {
-	int top;
-	int row_top;
-	int bottom;
-	int row_bottom;
+	int top;		//contour num
+	int row_top;	//y
+	int bottom;		//contour num
+	int row_bottom;	//y
 	int distance;
 };
 
@@ -28,6 +28,8 @@ enum signs {
 	SIGN_ZERO = 0,
 	SIGN_POS = 1
 };
+
+/*-----------------------------------------------------------------------------------------------*/
 
 //Contour matrix is a combination of image (points coordinates) and contours (contour number).
 //Such construction will minimize time of contour analysis: matrix is passed the single time 
@@ -74,6 +76,8 @@ static void DeleteContourMatrix(int**& contourMatrix, int height)
 		delete[] contourMatrix;
 }
 
+/*-----------------------------------------------------------------------------------------------*/
+
 //Set of functions to pass through contour matrix and distances between upper and bottom sides of auto number.
 static InsideDistance SetDistance(int** contourMatrix, int col, int height)
 {
@@ -116,6 +120,8 @@ static void GetDistances(int** contourMatrix, vector<InsideDistance>& dist, int 
 	}
 
 }
+
+/*-----------------------------------------------------------------------------------------------*/
 
 //Set of functions to transform distances into set of platoes - stationary parts distances histogramm.
 static bool CheckDistance(vector<InsideDistance>& distances, int cur)
@@ -183,112 +189,84 @@ static int GetLongestPlato(vector<int>& platoes)
 	return maxnum;
 }
 
+/*-----------------------------------------------------------------------------------------------*/
+
 //Set of functions to build lines based on points which belong to contours which bounder the longest plato.
-/*static bool CheckFalseDirection(int direction, int x, int xStart)
+int ContourIndex(int i, int size, int direction)
 {
-	if (direction == DIST_LEFT)
-		return x < xStart;
-	else if (direction == DIST_RIGHT)
-		return x > xStart;
-	else
-		throw "CheckFalseDirection(): wrong direction.";
-}
-
-static bool CheckTrueDirection(int direction, int x, int xStart)
-{
-	if (direction == DIST_LEFT)
-		return x > xStart;
-	else if (direction == DIST_RIGHT)
-		return x < xStart;
-	else
-		throw "CheckTrueDirection(): wrong direction.";
-}
-
-static bool CheckSign(vector<Point>& contour, int startNum, int sign, int direction)
-{
-	bool bChecked = false;
-	int i = startNum + sign;
-
-	while (i != startNum)
+	if (direction == DIST_RIGHT)
 	{
-		if (i == contour.size() && sign == SIGN_POS)
+		i++;
+		if (i == size)
 			i = 0;
-		else if (i == -1 && sign == SIGN_NEG)
-			i = contour.size() - 1;
-
-		if (CheckFalseDirection(direction, contour[i].x,contour[startNum].x))
-			break;
-		else if (CheckTrueDirection(direction, contour[i].x, contour[startNum].x))
-		{
-			bChecked = true;
-			break;
-		}
-		i += sign;
 	}
-	return bChecked;
+	else
+	{
+		i--;
+		if (i == -1)
+			i = size - 1;
+	}
+	return i;
 }
 
-static int GetContourCicleSign(vector<Point>& contour, int startNum, int direction)
+bool ContourEdge(vector<Point>& contour, int i, int iPrev, int edge_direction)
 {
-	int i;
-	bool bSign = false;
-	int sign;
-
-	sign = SIGN_POS;
-	bSign = CheckSign(contour, startNum, sign, direction);
-
-	if (!bSign)
-	{
-		sign = SIGN_NEG;
-		bSign = CheckSign(contour, startNum, sign, direction);
-	}
-
-	if (!bSign)
-		sign = SIGN_ZERO;
-
-	return sign;
-}*/
-
-/*static bool CheckLineEdge(vector<Point>& contour, int sign, int cur)
-{
-	int i;
-	bool bOk = true;
-
-
-	if (abs(contour[i].x - contour[cur].x) <= 1 && abs(contour[i].y - contour[cur].y) <= CONTOUR_DELTA_LOCAL )
-
-	for (i = PLATO_LOCAL_LENGTH; i > 0; i--)
-		if (abs(distances[cur - i].distance - distances[cur - i + 1].distance) > PLATO_DELTA_Y)
-		{
-			bOk = false;
-			break;
-		}
-
-	return  bOk && abs(distances[cur].distance - distances[cur - PLATO_LOCAL_LENGTH].distance) <= PLATO_DELTA_LOCAL &&
-		distances[cur].bottom != -1 && distances[cur].top != -1;
-}*/
-
-/*static void GetLineEdgePoints(vector<Point>& line, vector<Point>& contour, int xStart, int yStart, int direction)
-{
-	int i, startNum = 0;
-	Point pStart, pTmp;
-	bool bFound = false;
-	int sign;
-
-	while (startNum < contour.size() && contour[startNum].x != xStart && contour[startNum].y != yStart)
-	{
-		startNum++;
-	}
-	if (startNum < contour.size())
-		pStart = contour[startNum];
+	if (edge_direction = DIST_LEFT)
+		return contour[i].x > contour[iPrev].x;
 	else
-		throw "GetLineEdgePoints(): no point in the contour.";
+		return contour[i].x < contour[iPrev].x;
+}
+int GetContourEdge(vector<Point>& contour, int lineEnd, int contour_direction, int edge_direction)
+{
+	int iPrev, i = lineEnd;
+	int lineStart = lineEnd;
 
-	sign = GetContourCicleSign(contour, startNum, direction);
+	do
+	{
+		iPrev = i;
+		i = ContourIndex(i, contour.size(), contour_direction);
 
-	//for (i = 0; i < )
+		if ( ContourEdge(contour, i, iPrev, edge_direction))
+			break;
+		else
+			lineStart = i;
 
-}*/
+	} while (i != lineEnd);
+	return lineStart;
+}
+
+void GetContourEdgePoints(vector<Point>& line_points, vector<Point>& contour, Point edgePoint, Point nextPoint, int edge_direction, double averageDxDy)
+{
+	int i, edgePointNum = -1, nextPointNum = -1;
+	int contour_direction;
+	int lineBegin;
+	double curDxDy = 0;
+
+	for (i = 0; i < contour.size(); i++)
+	{
+		if (contour[i].x == edgePoint.x && contour[i].y == edgePoint.y)
+			edgePointNum = i;
+		else if (contour[i].x == nextPoint.x && contour[i].y == nextPoint.y)
+			nextPointNum = i;
+		if (edgePointNum != -1 && nextPointNum != -1)
+			break;
+	}
+
+	contour_direction = nextPointNum > edgePointNum ? DIST_LEFT : DIST_RIGHT;
+
+	lineBegin = GetContourEdge(contour, edgePointNum, contour_direction, edge_direction);
+
+	for (i = ContourIndex(edgePointNum, contour.size(), contour_direction); i != lineBegin; i = ContourIndex(i, contour.size(), contour_direction))
+	{
+		if (edgePoint.y - contour[i].y != 0)
+			curDxDy = (double)(edgePoint.x - contour[i].x) / ((edgePoint.y - contour[i].y)*(edgePoint.y - contour[i].y));
+		if (edgePoint.y - contour[i].y != 0 && abs(curDxDy / averageDxDy) < 1)
+			break;
+		line_points.push_back(contour[i]);
+	}
+}
+
+/*-----------------------------------------------------------------------------------------------*/
 
 static void ApproxLine(vector<Point>& line_points, Vec2f& coefs)
 {
@@ -316,24 +294,54 @@ static void MakeLines(vector<vector<Point>>& contours, vector<InsideDistance>& d
 {
 	int col;
 	int longest_plato = GetLongestPlato(platoes);
-	int leftTopContourNum = distances[2 * longest_plato].top;
-	int rightTopContourNum = distances[2 * longest_plato + 1].top;
-	int leftBottomContourNum = distances[2 * longest_plato].bottom;
-	int rightBottomContourNum = distances[2 * longest_plato + 1].bottom;
-	int platoStart = platoes[2 * longest_plato];
-	int platoEnd = platoes[2 * longest_plato + 1];
+	int platoStart = platoes[2 * longest_plato] - 1;
+	int platoEnd = platoes[2 * longest_plato + 1] - 1;
+	int leftTopContourNum = distances[platoStart].top;
+	int rightTopContourNum = distances[platoEnd].top;
+	int leftBottomContourNum = distances[platoStart].bottom;
+	int rightBottomContourNum = distances[platoEnd].bottom;
 	vector<Point> topLine, bottomLine;
+	int tmp;
 
-	//GetLineEdgePoints(topLine, contours[leftTopContourNum], platoStart, distances[platoStart].row_top, DIST_LEFT);
+	double averageTopDxDy = 1, averageBottomDxDy = 1;
+
+	if (distances[platoEnd].row_top != distances[platoStart].row_top)
+	{
+		tmp = distances[platoEnd].row_top - distances[platoStart].row_top;
+		averageTopDxDy = (double)(platoEnd - platoStart) / (tmp*tmp);
+
+	}
+	if (distances[platoEnd].row_bottom != distances[platoStart].row_bottom)
+	{
+		tmp = distances[platoEnd].row_bottom - distances[platoStart].row_bottom;
+		averageBottomDxDy = (double)(platoEnd - platoStart) / (tmp*tmp);
+	}
+
+	GetContourEdgePoints(topLine, contours[leftTopContourNum], 
+									Point(platoStart, distances[platoStart].row_top), 
+									Point(platoStart + 1, distances[platoStart + 1].row_top), DIST_LEFT, averageTopDxDy);
+	GetContourEdgePoints(bottomLine, contours[leftBottomContourNum],
+									Point(platoStart, distances[platoStart].row_bottom),
+									Point(platoStart + 1, distances[platoStart + 1].row_bottom), DIST_LEFT, averageBottomDxDy);
 
 	for (col = platoStart; col <= platoEnd; col++)
 	{
 		topLine.push_back(Point(col, distances[col].row_top));
 		bottomLine.push_back(Point(col, distances[col].row_bottom));
 	}
+
+	GetContourEdgePoints(topLine, contours[rightTopContourNum],
+									Point(platoEnd, distances[platoEnd].row_top),
+									Point(platoEnd - 1, distances[platoEnd - 1].row_top), DIST_RIGHT, averageTopDxDy);
+	GetContourEdgePoints(bottomLine, contours[rightBottomContourNum],
+									Point(platoEnd, distances[platoEnd].row_bottom),
+									Point(platoEnd - 1, distances[platoEnd - 1].row_bottom), DIST_RIGHT, averageBottomDxDy);
+
 	ApproxLine(topLine, coefs[0]);
 	ApproxLine(bottomLine, coefs[1]);
 }
+
+/*-----------------------------------------------------------------------------------------------*/
 
 static Mat DrawHistogramm(vector<InsideDistance>& distances, vector<int>& platoes, int width, int height)
 {
@@ -355,6 +363,8 @@ static Mat DrawHistogramm(vector<InsideDistance>& distances, vector<int>& platoe
 	}
 	return histo;
 }
+
+/*-----------------------------------------------------------------------------------------------*/
 
 //Main function in contour analisys module.
 //contours - contours of cropped area with number

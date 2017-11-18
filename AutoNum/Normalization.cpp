@@ -1,5 +1,7 @@
 #include "stdafx.h"
 
+/*-----------------------------------------------------------------------------------------------*/
+
 //Pack of functions to get supporting lines for auto number.
 static Mat SupportingLinesFiltering(Mat& gray)
 {
@@ -81,6 +83,9 @@ static void GetSupportingLines(Mat& original, vector<Vec2f>& line_coefs)
 	
 	return;
 }
+
+/*-----------------------------------------------------------------------------------------------*/
+
 //Pack of functions to provide affine tranformation on auto number if it is turned.
 static void GetAffineInput(vector<Point2f>& input, vector<Vec2f>& line_coefs, int width)
 {
@@ -154,6 +159,8 @@ static Mat MakeAffine(Mat& original, vector<Vec2f>& line_coefs)
 	return cropped;
 }
 
+/*-----------------------------------------------------------------------------------------------*/
+
 //Main function in normalization module. Provides all operation on image with auto number area to get 
 //image prepared to neuronet processing.
 Mat NormalizeAutonum( Mat& original )
@@ -164,7 +171,7 @@ Mat NormalizeAutonum( Mat& original )
 
 	GetSupportingLines(original, line_coefs);
 	
-	affine = MakeAffine(original, line_coefs);
+/*	affine = MakeAffine(original, line_coefs);
 
 	cropped = affine.rowRange(2, affine.rows - 2);
 	SetImage(cropped, IMG_NORM_AFFINE);
@@ -173,7 +180,7 @@ Mat NormalizeAutonum( Mat& original )
 	
 	medianBlur(gray, contrast, 3);
 	equalizeHist(contrast, normalized);
-	SetImage(normalized, IMG_NORMALIZED);
+	SetImage(normalized, IMG_NORMALIZED);*/
 
 	return normalized;
 }
