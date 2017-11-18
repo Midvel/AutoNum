@@ -16,9 +16,14 @@
 #include <cmath>
 
 #include <opencv2\opencv.hpp>
+#include <opencv2\ml\ml.hpp>
 
 using namespace std;
 using namespace cv;
+using namespace cv::ml;
+
+#include "utils/NeuronTrainingModule.h"
+#include "utils/HaarTrainingModule.h"
 
 enum imgnums
 {
@@ -44,3 +49,4 @@ Mat NormalizeAutonum(cv::Mat&);
 
 void Decomposition(Mat&, vector<Mat>&);
 
+int Recognition(vector<Mat>&);

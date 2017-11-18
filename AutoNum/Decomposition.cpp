@@ -149,8 +149,9 @@ static Mat AnalizeHistogramm(Mat& normalized, vector<int>& histogramm, vector<in
 	cropped = CropDecomposed(normalized, histogramm);
 
 	decomposed = CutDecomposed(cropped, histogramm, cutPoints);
+	SetImage(decomposed, IMG_NORM_CUTLINES);
 
-	return decomposed;
+	return cropped;
 }
 
 void Decomposition(Mat& normalized, vector<Mat>& components)
@@ -160,14 +161,14 @@ void Decomposition(Mat& normalized, vector<Mat>& components)
 	vector<int> histogramm;
 	vector<int> cutPoints;
 
-	threshold(normalized, bin, 100, 255, THRESH_BINARY_INV);
+	medianBlur(normalized, bin, 3);
+	threshold(bin, bin, 100, 255, THRESH_BINARY_INV);
 	SetImage(bin, IMG_NORM_BIN);
 
 	histo = DrawBinHisto(bin, histogramm);
 	SetImage(histo, IMG_NORM_BIN_HISTO);
 
 	cropped = AnalizeHistogramm(normalized, histogramm, cutPoints);
-	SetImage(cropped, IMG_NORM_CUTLINES);
 
 	for (i = 0; i < cutPoints.size() - 1; i++)
 	{

@@ -173,7 +173,6 @@ Mat NormalizeAutonum( Mat& original )
 	
 	medianBlur(gray, contrast, 3);
 	equalizeHist(contrast, normalized);
-	medianBlur(normalized, normalized, 3);
 	SetImage(normalized, IMG_NORMALIZED);
 
 	return normalized;

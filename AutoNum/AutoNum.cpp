@@ -26,29 +26,35 @@ int main()
 	Mat original;
 	Mat normalized;
 	vector<Mat> components;
+	int train = 0;
 	
-	original = OpenImage();
-	SetImage(original, IMG_ORIGINAL);
+	if (0 == train)
+	{
+		original = OpenImage();
+		SetImage(original, IMG_ORIGINAL);
 
 
-	normalized = NormalizeAutonum(original);
+		normalized = NormalizeAutonum(original);
 
-	Decomposition(normalized, components);
+		Decomposition(normalized, components);
 
-	namedWindow("Bin", WINDOW_AUTOSIZE);
-//	imshow("Bin", GetImage(IMG_NORM_LINES_FILTERED));
+		/*	namedWindow("Bin", WINDOW_AUTOSIZE);
 
-//	imshow("Histo", GetImage(IMG_NORM_LINES_EDGED));
-//	imshow("Decomposed", GetImage(IMG_NORM_LINES_PLATOES));
-//	imshow("Lines", GetImage(IMG_NORM_LINES));
+			imshow("One", components[0]);
 
-	imshow("Bin", GetImage(IMG_NORM_BIN));
+			waitKey();
+			getchar();*/
 
-	imshow("Histo", GetImage(IMG_NORM_BIN_HISTO));
-	imshow("Decomposed", GetImage(IMG_NORM_CUTLINES));
-
-	waitKey();
-	getchar();
+		Recognition(components);
+	}
+	else if (1 == train)
+	{
+		NeuronTrainingModule();
+	}
+	else
+	{
+		HaarTrainingModule();
+	}
 	return 0;
 }
 
