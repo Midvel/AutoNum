@@ -166,7 +166,7 @@ string Recognition(vector<Mat>& components)
 	Ptr<ANN_MLP> network;
 	FILE* fp;
 	network = ANN_MLP::load("config/network.dat");
-	fp = fopen("results.txt", "w");
+	fopen_s(&fp, "output/results.txt", "w");
 	
 	for (i = 0; i < components.size(); i++)
 	{
@@ -186,7 +186,7 @@ string Recognition(vector<Mat>& components)
 			fprintf(fp, "Predict for fragment %d:\n", i);
 			for (j = 0; j < result.cols; j++)
 			{
-				fprintf(fp, "Class \<%s\> value: %f\n", GetClassName(j).c_str(), pres(0, j));
+				fprintf(fp, "Class <%s> value: %f\n", GetClassName(j).c_str(), pres(0, j));
 			}
 			resstr = ResultToString(result);
 			recognized += resstr;

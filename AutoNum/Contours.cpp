@@ -154,7 +154,7 @@ static int GetPlato(vector<InsideDistance>& distances, vector<int>& platoes)
 			else
 			{
 				bPlatoStarted = true;
-				nCurPlatoLength = PLATO_LOCAL_LENGTH;
+				nCurPlatoLength = 0;
 			}
 		}
 		else

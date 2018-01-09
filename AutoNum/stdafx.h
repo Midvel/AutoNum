@@ -29,6 +29,7 @@ using namespace cv::ml;
 enum imgnums
 {
 	IMG_ORIGINAL = 0,
+	IMG_DETECTED,
 	IMG_NORM_LINES_FILTERED,
 	IMG_NORM_LINES_EDGED,
 	IMG_NORM_LINES_PLATOES,
@@ -43,6 +44,8 @@ enum imgnums
 
 void SetImage(cv::Mat&, int);
 cv::Mat& GetImage(int);
+
+Mat Detection(Mat&, std::vector<cv::Rect>&);
 
 Mat ContourAnalysis(vector<vector<Point>>&, vector<Vec2f>&, int, int);
 

@@ -149,6 +149,10 @@ static Mat MakeAffine(Mat& original, vector<Vec2f>& line_coefs)
 
 		warpAffine(original, affine, transform, original.size(), INTER_LINEAR, BORDER_REFLECT_101);
 
+		if (output[0].y < 0)
+			output[0].y = 0;
+		if (output[2].y > affine.rows)
+			output[2].y = affine.rows;
 		cropped = affine.rowRange(output[0].y, output[2].y);
 	}
 	else

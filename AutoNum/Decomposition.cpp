@@ -170,11 +170,14 @@ void Decomposition(Mat& normalized, vector<Mat>& components)
 
 	cropped = AnalizeHistogramm(normalized, histogramm, cutPoints);
 
-	for (i = 0; i < cutPoints.size() - 1; i++)
+	if (cutPoints.size() > 0)
 	{
-		if (cutPoints[i + 1] - cutPoints[i] > 15)
+		for (i = 0; i < cutPoints.size() - 1; i++)
 		{
-			components.push_back(cropped.colRange(cutPoints[i], cutPoints[i + 1]));
+			if (cutPoints[i + 1] - cutPoints[i] > 15)
+			{
+				components.push_back(cropped.colRange(cutPoints[i], cutPoints[i + 1]));
+			}
 		}
 	}
 

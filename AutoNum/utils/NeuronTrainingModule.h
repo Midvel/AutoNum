@@ -26,8 +26,8 @@ enum images_input
 	GARBAGE
 };
 
-const int NEURON_IMAGE_COLS = 40;
-const int NEURON_IMAGE_ROWS = 52;
+const int NEURON_IMAGE_COLS = 50;// 40;
+const int NEURON_IMAGE_ROWS = 62;// 52;
 
 void NeuronTrainingModule();
 string GetClassName(int);
